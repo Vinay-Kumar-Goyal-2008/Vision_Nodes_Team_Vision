@@ -4,8 +4,10 @@ import sys
 import uuid
 import requests
 from typing import List, Dict, Optional
+from flask import Blueprint,jsonify,request
+import json
 
-API_KEY = "<your_api_key>"
+API_KEY = "2TYJCsiaY3x86YP9Tb7ZbGg25u8mPfB2"
 BASE_URL = "https://api.on-demand.io/chat/v1"
 MEDIA_BASE_URL = "https://api.on-demand.io/media/v1"
 
@@ -16,39 +18,7 @@ AGENT_IDS = ["agent-1712327325","agent-1713962163"]  # Dynamic list from PluginI
 FILE_AGENT_IDS = ["agent-1713954536","agent-1713958591","agent-1713958830","agent-1713961903","agent-1713967141"]
 ENDPOINT_ID = "predefined-xai-grok4.1-fast"
 REASONING_MODE = "grok-4-fast"
-FULFILLMENT_PROMPT = "You are a Google Books Reference Agent."
-
-# Purpose:
-# Provide educational summaries and book references using Google Books data.
-
-# Input:
-# - query (string)
-# - subject (optional)
-# - max_books (integer)
-
-# Instructions:
-# 1. Use only information derived from Google Books metadata and previews.
-# 2. Identify relevant books related to the query.
-# 3. Extract key ideas, themes, or explanations from book descriptions.
-# 4. Do not invent content not present in book data.
-# 5. Keep explanations factual and concise.
-# 6. If no relevant books are found, return \"No relevant books found.\"
-
-# Output:
-# Return JSON only:
-# {
-#   \"query\": \"...\",
-#   \"books\": [
-#     {
-#       \"title\": \"...\",
-#       \"authors\": \"...\",
-#       \"published_year\": \"...\",
-#       \"summary\": \"...\"
-#     }
-#   ]
-# }
-
-# "
+FULFILLMENT_PROMPT = "The Google Books Agent provides access to a large and reliable database of books, enabling users to search for books using parameters such as title, author, ISBN, or related keywords. It retrieves structured metadata including book titles, author names, publication details, descriptions, and available cover images. The agent focuses on delivering accurate, factual book information without interpretation or opinion, making it suitable for discovery, research, and cataloging use cases."
 STOP_SEQUENCES = []  # Dynamic list
 TEMPERATURE = 0.7
 TOP_P = 1
@@ -148,8 +118,8 @@ def upload_media_file(file_path: str, file_name: str, agents: List[str], session
     finally:
         files['file'][1].close()
 
-def main():
-    if API_KEY == "<yV3ysFt1tJXFyNquvteL8oTqDdKcEWd3>" or not API_KEY:
+def main(query):
+    if API_KEY == "<your_api_key>" or not API_KEY:
         print("❌ Please set API_KEY.")
         sys.exit(1)
 
@@ -157,8 +127,7 @@ def main():
     if EXTERNAL_USER_ID == "<your_external_user_id>" or not EXTERNAL_USER_ID:
         EXTERNAL_USER_ID = str(uuid.uuid4())
         print(f"⚠️  Generated EXTERNAL_USER_ID: {EXTERNAL_USER_ID}")
-
-
+    
     context_metadata = [
         {"key": "userId", "value": "1"},
         {"key": "name", "value": "John"},
@@ -168,7 +137,7 @@ def main():
     session_id = create_chat_session(context_metadata)
     if session_id:
         print("\n--- Submitting Query ---")
-        print(f"Using query: '{QUERY}'")
+        print(f"Using query: '{query}'")
         print(f"Using responseMode: '{RESPONSE_MODE}'")
         # Optional: Upload media file if configured
         media_data = None
@@ -176,11 +145,12 @@ def main():
             media_data = upload_media_file(FILE_PATH, FILE_NAME, FILE_AGENT_IDS, session_id)
             if media_data:
                 print(f"\n✅ Media uploaded. You can reference it in your query or session.")
-        submit_query(session_id, context_metadata)
+        return submit_query(session_id, context_metadata)
+        
 
 def create_chat_session(context_metadata: List[Dict[str, str]]) -> str:
     url = BASE_URL + "/sessions"
-
+    print(EXTERNAL_USER_ID)
     body = {
         "agentIds": AGENT_IDS,
         "externalUserId": EXTERNAL_USER_ID,
@@ -254,7 +224,7 @@ def submit_query(session_id: str, context_metadata: List[Dict[str, str]]):
     print()
 
     if RESPONSE_MODE == "sync":
-        if response.status_code == 200:
+        if response.status_code == 201:
             original = response.json()
 
             # Append context metadata at the end
@@ -314,7 +284,26 @@ def submit_query(session_id: str, context_metadata: List[Dict[str, str]]):
 
         formatted = json.dumps(final_response, indent=2)
         print("\n✅ Final Response (with contextMetadata appended):")
-        print(formatted)
+        return formatted
 
+google = Blueprint('google', __name__)
+
+@google.route("/google_book", methods=["POST"])
+def google_book():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    data = request.get_json()
+    links = data.get("links")  # Expecting: {"links": ["url1", "url2"]}
+
+    if not links or not isinstance(links, list):
+        return jsonify({"error": "Provide a list of links"}), 400
+
+    # Build the query prompt
+    prompt = f"Act as a web content extractor. Fetch content from provided links: {links}, clean and sanitize the text, and return the extracted information. Handle multiple links in parallel and manage errors gracefully to ensure accurate and complete results."
+
+    # Call your main function with this query
+    result = main(query=prompt)  
+    return jsonify({"result": json.loads(result)['data']['answer']})
 if __name__ == "__main__":
     main()

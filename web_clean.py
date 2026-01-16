@@ -1,4 +1,3 @@
-# YOUTUBE
 
 def search_youtube(search_query):
     page.goto(f"https://www.youtube.com/results?search_query={search_query}&sp=EgIIAQ%253D%253D")
@@ -9,9 +8,9 @@ def play_video():
 def skip_ad():
     try:
     
-    btn = page.locator(".ytp-ad-skip-button, .ytp-ad-overlay-close-button")
-    btn.wait_for(state="visible", timeout=5000)
-    btn.click()
+        btn = page.locator(".ytp-ad-skip-button, .ytp-ad-overlay-close-button")
+        btn.wait_for(state="visible", timeout=5000)
+        btn.click()
     except:
         pass
 
