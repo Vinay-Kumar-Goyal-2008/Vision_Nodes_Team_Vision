@@ -14,8 +14,8 @@ MEDIA_BASE_URL = "https://api.on-demand.io/media/v1"
 EXTERNAL_USER_ID = "<your_external_user_id>"
 QUERY = "<your_query>"
 RESPONSE_MODE = "stream"  # Now dynamic
-AGENT_IDS = ["agent-1712327325","agent-1713962163"]  # Dynamic list from PluginIds
-FILE_AGENT_IDS = ["agent-1713954536","agent-1713958591","agent-1713958830","agent-1713961903","agent-1713967141"]
+AGENT_IDS = ["agent-1712327325"]  # Dynamic list from PluginIds
+FILE_AGENT_IDS = []
 ENDPOINT_ID = "predefined-xai-grok4.1-fast"
 REASONING_MODE = "grok-4-fast"
 FULFILLMENT_PROMPT = "The Web Content Extractor Agent retrieves content from user-provided web links, extracts the relevant textual information, and sanitizes it by removing unnecessary markup, scripts, and noise. It is designed to handle multiple links efficiently, process them in parallel, and manage errors gracefully to ensure reliable and consistent results. The agent focuses on returning clean, structured, and readable content without interpretation or added opinions, making it suitable for summarization, analysis, or downstream processing."
@@ -145,7 +145,7 @@ def main(query):
             media_data = upload_media_file(FILE_PATH, FILE_NAME, FILE_AGENT_IDS, session_id)
             if media_data:
                 print(f"\n✅ Media uploaded. You can reference it in your query or session.")
-        return submit_query(session_id, context_metadata)
+        return submit_query(session_id, context_metadata,query)
         
 
 def create_chat_session(context_metadata: List[Dict[str, str]]) -> str:
@@ -190,11 +190,11 @@ def create_chat_session(context_metadata: List[Dict[str, str]]) -> str:
         print(f"❌ Error creating chat session: {response.status_code} - {response.text}")
         return ""
 
-def submit_query(session_id: str, context_metadata: List[Dict[str, str]]):
+def submit_query(session_id: str, context_metadata: List[Dict[str, str]],query):
     url = f"{BASE_URL}/sessions/{session_id}/query"
     body = {
         "endpointId": ENDPOINT_ID,
-        "query": QUERY,
+        "query": query,
         "agentIds": AGENT_IDS,
         "responseMode": RESPONSE_MODE,
         "reasoningMode": REASONING_MODE,

@@ -14,11 +14,11 @@ MEDIA_BASE_URL = "https://api.on-demand.io/media/v1"
 EXTERNAL_USER_ID = "<your_external_user_id>"
 QUERY = "<your_query>"
 RESPONSE_MODE = "stream"  # Now dynamic
-AGENT_IDS = ["tool-1720113770"]  # Dynamic list from PluginIds
+AGENT_IDS = ["tool-1766257467"]  # Dynamic list from PluginIds
 FILE_AGENT_IDS = []
 ENDPOINT_ID = "predefined-xai-grok4.1-fast"
 REASONING_MODE = "grok-4-fast"
-FULFILLMENT_PROMPT = "The Google Books Agent provides access to a large and reliable database of books, enabling users to search for books using parameters such as title, author, ISBN, or related keywords. It retrieves structured metadata including book titles, author names, publication details, descriptions, and available cover images. The agent focuses on delivering accurate, factual book information without interpretation or opinion, making it suitable for discovery, research, and cataloging use cases."
+FULFILLMENT_PROMPT = "The Chat Agent retrieves up-to-date, factual information from reliable web sources to answer user queries related to general health context, current events, weather conditions, and recent news that may be relevant to well-being. It focuses on providing accurate, timely, and neutral information without offering medical diagnoses, treatment advice, or personal opinions. The agent is designed for informational awareness only, helping users stay informed through trusted search results and public data while maintaining clarity and simplicity in its responses."
 STOP_SEQUENCES = []  # Dynamic list
 TEMPERATURE = 0.7
 TOP_P = 1
@@ -286,10 +286,10 @@ def submit_query(session_id: str, context_metadata: List[Dict[str, str]],query):
         print("\n✅ Final Response (with contextMetadata appended):")
         return formatted
 
-google = Blueprint('google', __name__)
+chat = Blueprint('chat', __name__)
 
-@google.route("/google_book", methods=["POST"])
-def google_book():
+@chat.route("/chat_api", methods=["POST"])
+def chat_api():
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
 
@@ -304,6 +304,6 @@ def google_book():
 
     # Call your main function with this query
     result = main(query=prompt)  
-    return jsonify({"result": json.loads(result)['data']['answer']})
+    return jsonify({"result":json.loads(result)['data']['answer']})
 if __name__ == "__main__":
     main()
