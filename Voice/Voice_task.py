@@ -74,8 +74,8 @@ def get_best_command(text):
 
     if best_score < SIMILARITY_THRESHOLD:
         return None, None
-
-    return best_cmd, best_cat
+    normscore=(best_score-SIMILARITY_THRESHOLD)/(1-SIMILARITY_THRESHOLD)
+    return best_cmd, best_cat,normscore
 # =================================================================
 
 
