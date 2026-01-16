@@ -4,21 +4,19 @@ import sys
 import uuid
 import requests
 from typing import List, Dict, Optional
-from flask import Blueprint,jsonify,request
-import json
 
-API_KEY = "2TYJCsiaY3x86YP9Tb7ZbGg25u8mPfB2"
+API_KEY = "<your_api_key>"
 BASE_URL = "https://api.on-demand.io/chat/v1"
 MEDIA_BASE_URL = "https://api.on-demand.io/media/v1"
 
 EXTERNAL_USER_ID = "<your_external_user_id>"
 QUERY = "<your_query>"
 RESPONSE_MODE = "stream"  # Now dynamic
-AGENT_IDS = ["tool-1720113770"]  # Dynamic list from PluginIds
+AGENT_IDS = ["agent-1737365406"]  # Dynamic list from PluginIds
 FILE_AGENT_IDS = []
 ENDPOINT_ID = "predefined-xai-grok4.1-fast"
 REASONING_MODE = "grok-4-fast"
-FULFILLMENT_PROMPT = "The Google Books Agent provides access to a large and reliable database of books, enabling users to search for books using parameters such as title, author, ISBN, or related keywords. It retrieves structured metadata including book titles, author names, publication details, descriptions, and available cover images. The agent focuses on delivering accurate, factual book information without interpretation or opinion, making it suitable for discovery, research, and cataloging use cases."
+FULFILLMENT_PROMPT = "The Web Content Extractor Agent retrieves content from user-provided web links, extracts the relevant textual information, and sanitizes it by removing unnecessary markup, scripts, and noise. It is designed to handle multiple links efficiently, process them in parallel, and manage errors gracefully to ensure reliable and consistent results. The agent focuses on returning clean, structured, and readable content without interpretation or added opinions, making it suitable for summarization, analysis, or downstream processing."
 STOP_SEQUENCES = []  # Dynamic list
 TEMPERATURE = 0.7
 TOP_P = 1
@@ -127,7 +125,8 @@ def main(query):
     if EXTERNAL_USER_ID == "<your_external_user_id>" or not EXTERNAL_USER_ID:
         EXTERNAL_USER_ID = str(uuid.uuid4())
         print(f"⚠️  Generated EXTERNAL_USER_ID: {EXTERNAL_USER_ID}")
-    
+
+
     context_metadata = [
         {"key": "userId", "value": "1"},
         {"key": "name", "value": "John"},
@@ -137,7 +136,7 @@ def main(query):
     session_id = create_chat_session(context_metadata)
     if session_id:
         print("\n--- Submitting Query ---")
-        print(f"Using query: '{query}'")
+        print(f"Using query: '{QUERY}'")
         print(f"Using responseMode: '{RESPONSE_MODE}'")
         # Optional: Upload media file if configured
         media_data = None
@@ -145,12 +144,11 @@ def main(query):
             media_data = upload_media_file(FILE_PATH, FILE_NAME, FILE_AGENT_IDS, session_id)
             if media_data:
                 print(f"\n✅ Media uploaded. You can reference it in your query or session.")
-        return submit_query(session_id, context_metadata,query)
-        
+        return submit_query(session_id, context_metadata)
 
 def create_chat_session(context_metadata: List[Dict[str, str]]) -> str:
     url = BASE_URL + "/sessions"
-    print(EXTERNAL_USER_ID)
+
     body = {
         "agentIds": AGENT_IDS,
         "externalUserId": EXTERNAL_USER_ID,
@@ -190,11 +188,11 @@ def create_chat_session(context_metadata: List[Dict[str, str]]) -> str:
         print(f"❌ Error creating chat session: {response.status_code} - {response.text}")
         return ""
 
-def submit_query(session_id: str, context_metadata: List[Dict[str, str]],query):
+def submit_query(session_id: str, context_metadata: List[Dict[str, str]]):
     url = f"{BASE_URL}/sessions/{session_id}/query"
     body = {
         "endpointId": ENDPOINT_ID,
-        "query": query,
+        "query": QUERY,
         "agentIds": AGENT_IDS,
         "responseMode": RESPONSE_MODE,
         "reasoningMode": REASONING_MODE,
@@ -224,7 +222,7 @@ def submit_query(session_id: str, context_metadata: List[Dict[str, str]],query):
     print()
 
     if RESPONSE_MODE == "sync":
-        if response.status_code == 201:
+        if response.status_code == 200:
             original = response.json()
 
             # Append context metadata at the end
@@ -286,24 +284,5 @@ def submit_query(session_id: str, context_metadata: List[Dict[str, str]],query):
         print("\n✅ Final Response (with contextMetadata appended):")
         return formatted
 
-google = Blueprint('google', __name__)
-
-@google.route("/google_book", methods=["POST"])
-def google_book():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
-
-    data = request.get_json()
-    links = data.get("links")  # Expecting: {"links": ["url1", "url2"]}
-
-    if not links or not isinstance(links, list):
-        return jsonify({"error": "Provide a list of links"}), 400
-
-    # Build the query prompt
-    prompt = f"Act as a web content extractor. Fetch content from provided links: {links}, clean and sanitize the text, and return the extracted information. Handle multiple links in parallel and manage errors gracefully to ensure accurate and complete results."
-
-    # Call your main function with this query
-    result = main(query=prompt)  
-    return jsonify({"result": json.loads(result)['data']['answer']})
 if __name__ == "__main__":
     main()
