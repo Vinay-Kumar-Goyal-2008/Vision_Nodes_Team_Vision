@@ -1,5 +1,6 @@
 
 def search_youtube(search_query):
+    
     page.goto(f"https://www.youtube.com/results?search_query={search_query}&sp=EgIIAQ%253D%253D")
     
 def play_video():

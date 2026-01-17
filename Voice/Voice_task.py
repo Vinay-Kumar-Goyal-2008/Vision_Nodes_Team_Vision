@@ -1,4 +1,5 @@
 import speech_recognition as sr
+
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -7,6 +8,7 @@ import threading
 import time
 import os
 from queue import Queue
+
 
 # ---------------- CONFIG ----------------
 AUTH_FILE = "auth.json"
@@ -100,7 +102,6 @@ def speech_listener():
         except sr.RequestError:
             pass
 # ===========================================================
-
 
 # ================= START SPEECH THREAD =================
 threading.Thread(
